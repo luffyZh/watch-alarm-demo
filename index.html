@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watch UI Design Set</title>
+<style>
+    body {
+        background-color: #333;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 40px;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* 通用手表容器样式 */
+    .watch-screen {
+        width: 240px;
+        height: 280px;
+        border-radius: 20px; /* 模拟手表圆角 */
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* =========================================
+       样式 1: 赛博霓虹 (黑色底 + 环形进度)
+       特点：高对比度，发光效果，适合暗光环境
+       ========================================= */
+    .style-neon {
+        background-color: #000;
+        color: #fff;
+    }
+    
+    .neon-label {
+        position: absolute;
+        top: 30px;
+        font-size: 16px;
+        letter-spacing: 2px;
+        color: #0ff; /* 青色 */
+        text-transform: uppercase;
+        text-shadow: 0 0 5px rgba(0, 255, 255, 0.6);
+    }
+
+    .neon-circle-container {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .neon-svg {
+        transform: rotate(-90deg);
+        width: 100%;
+        height: 100%;
+    }
+
+    .neon-track {
+        fill: none;
+        stroke: #1a1a1a;
+        stroke-width: 8;
+    }
+
+    .neon-progress {
+        fill: none;
+        stroke: #0ff;
+        stroke-width: 8;
+        stroke-linecap: round;
+        stroke-dasharray: 440; /* 2 * PI * r (r=70) ≈ 440 */
+        stroke-dashoffset: 110; /* 模拟进度，减少这个值进度增加 */
+        filter: drop-shadow(0 0 4px #0ff);
+    }
+
+    .neon-time {
+        position: absolute;
+        font-size: 48px;
+        font-weight: bold;
+        font-variant-numeric: tabular-nums; /* 等宽数字，防止跳动 */
+    }
+
+    /* =========================================
+       样式 2: 极简医疗 (白色底 + 扇形进度)
+       特点：干净、清晰，适合办公/阅读场景
+       ========================================= */
+    .style-clean {
+        background-color: #f4f6f8;
+        color: #333;
+    }
+
+    .clean-bg-circle {
+        position: absolute;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: conic-gradient(#3b82f6 75%, #e2e8f0 0); /* CSS 锥形渐变实现进度 */
+        opacity: 0.15;
+        z-index: 0;
+    }
+
+    .clean-content {
+        z-index: 1;
+        text-align: center;
+    }
+
+    .clean-label {
+        font-size: 14px;
+        color: #64748b;
+        margin-bottom: 5px;
+        font-weight: 500;
+        background: #fff;
+        padding: 4px 12px;
+        border-radius: 12px;
+        display: inline-block;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .clean-time {
+        font-size: 56px;
+        font-weight: 800;
+        color: #1e293b;
+        line-height: 1;
+        letter-spacing: -2px;
+    }
+
+    .clean-bar-container {
+        position: absolute;
+        bottom: 40px;
+        width: 160px;
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .clean-bar-fill {
+        width: 75%;
+        height: 100%;
+        background: #3b82f6;
+        border-radius: 3px;
+    }
+
+    /* =========================================
+       样式 3: 矩阵数据 (黑色底 + 点阵/条形)
+       特点：硬核科幻，类似 HUD 界面
+       ========================================= */
+    .style-hud {
+        background-color: #050505;
+        color: #eab308; /* 琥珀色 */
+        border: 2px solid #333;
+    }
+
+    .hud-header {
+        position: absolute;
+        top: 20px;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 20px;
+        box-sizing: border-box;
+    }
+
+    .hud-label {
+        font-size: 12px;
+        border: 1px solid #eab308;
+        padding: 2px 6px;
+        border-radius: 2px;
+    }
+
+    .hud-icon {
+        font-size: 12px;
+        opacity: 0.7;
+    }
+
+    .hud-grid {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: linear-gradient(rgba(234, 179, 8, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(234, 179, 8, 0.05) 1px, transparent 1px);
+        background-size: 20px 20px;
+        z-index: 0;
+    }
+
+    .hud-time-box {
+        z-index: 1;
+        text-align: center;
+        border-left: 2px solid #eab308;
+        border-right: 2px solid #eab308;
+        padding: 0 20px;
+    }
+
+    .hud-time {
+        font-family: "Courier New", Courier, monospace; /* 强制等宽字体 */
+        font-size: 52px;
+        font-weight: bold;
+        text-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
+    }
+
+    .hud-progress-segments {
+        position: absolute;
+        bottom: 50px;
+        display: flex;
+        gap: 4px;
+    }
+
+    .segment {
+        width: 12px;
+        height: 20px;
+        background-color: #333;
+        transform: skewX(-20deg); /* 倾斜效果 */
+    }
+
+    .segment.active {
+        background-color: #eab308;
+        box-shadow: 0 0 5px #eab308;
+    }
+
+    /* =========================================
+       样式 4: 陶瓷未来 (白色底 + 环形渐变)
+       特点：柔和、高级感，类似智能家居
+       ========================================= */
+    .style-soft {
+        background-color: #fff;
+        color: #333;
+    }
+
+    .soft-ring-bg {
+        position: absolute;
+        width: 190px;
+        height: 190px;
+        border-radius: 50%;
+        background: conic-gradient(from 180deg, #ff6b6b 0%, #ff6b6b 60%, #f0f0f0 60%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+    }
+
+    .soft-inner-circle {
+        width: 160px;
+        height: 160px;
+        background: #fff;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .soft-label {
+        font-size: 14px;
+        color: #999;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .soft-time {
+        font-size: 42px;
+        font-weight: 600;
+        color: #ff6b6b;
+    }
+    
+    .soft-status {
+        font-size: 12px;
+        margin-top: 5px;
+        color: #ccc;
+    }
+
+</style>
+</head>
+<body>
+
+    <!-- 样式 1: 赛博霓虹 (黑底) -->
+    <div class="watch-screen style-neon">
+        <div class="neon-label">午睡</div>
+        <div class="neon-circle-container">
+            <svg class="neon-svg" viewBox="0 0 160 160">
+                <circle class="neon-track" cx="80" cy="80" r="70"></circle>
+                <circle class="neon-progress" cx="80" cy="80" r="70"></circle>
+            </svg>
+            <div class="neon-time">00:30</div>
+        </div>
+    </div>
+
+    <!-- 样式 2: 极简医疗 (白底) -->
+    <div class="watch-screen style-clean">
+        <div class="clean-bg-circle"></div>
+        <div class="clean-content">
+            <div class="clean-label">阅读时间</div>
+            <div class="clean-time">15:00</div>
+        </div>
+        <div class="clean-bar-container">
+            <div class="clean-bar-fill"></div>
+        </div>
+    </div>
+
+    <!-- 样式 3: 矩阵数据 (黑底) -->
+    <div class="watch-screen style-hud">
+        <div class="hud-grid"></div>
+        <div class="hud-header">
+            <div class="hud-label">WORKOUT</div>
+            <div class="hud-icon">⚡ 85%</div>
+        </div>
+        <div class="hud-time-box">
+            <div class="hud-time">00:45</div>
+        </div>
+        <div class="hud-progress-segments">
+            <!-- 模拟进度条块 -->
+            <div class="segment active"></div>
+            <div class="segment active"></div>
+            <div class="segment active"></div>
+            <div class="segment active"></div>
+            <div class="segment active"></div>
+            <div class="segment"></div>
+            <div class="segment"></div>
+            <div class="segment"></div>
+        </div>
+    </div>
+
+    <!-- 样式 4: 陶瓷未来 (白底) -->
+    <div class="watch-screen style-soft">
+        <div class="soft-ring-bg">
+            <div class="soft-inner-circle">
+                <div class="soft-label">会议倒计时</div>
+                <div class="soft-time">10:00</div>
+                <div class="soft-status">进行中...</div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
